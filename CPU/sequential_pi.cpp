@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
-#include "random_generator.h"
+#include "random_generator.hpp"
 
 const uint64_t NUM_SAMPLES = 1e9;
 
