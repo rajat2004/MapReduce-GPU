@@ -2,74 +2,124 @@
 #include <chrono>
 #include <fstream>
 #include <sstream>
-#include <string>
-#include "config.cuh"
+#include <cstring>
+#include <climits>
 #include "random_generator.hpp"
+
+
+// No. of input elements (Length of dataset)
+// TODO: Maybe make it variable, calculated from reading the text file
+const uint64_t NUM_INPUT = 5000;
+// No. of values in each line (Size of datapoint)
+const int LENGTH = 2;
+// No. of iterations
+const int ITERATIONS = 1000;
+// Total No. of output values (K - No. of clusters)
+const int NUM_OUTPUT = 15;
+
+// Custom types
+struct Point {
+    int values[LENGTH];
+};
+
+// Type declarations for input, output & key-value pairs
+using input_type = Point;       // Datapoint (or vector) read from the text file
+using output_type = Point;      // Outputs are the cluster centroids
 
 const bool SAVE_TO_FILE = true;
 
-__device__ __host__
-uint64_cu distance(const Point& p1, const Point& p2) {
-    uint64_cu dist = 0;
-    for (int i=0; i<DIMENSION; i++)
+
+uint64_t distance(const Point& p1, const Point& p2) {
+    uint64_t dist = 0;
+    for (int i=0; i<LENGTH; i++)
         dist += (p1.values[i]-p2.values[i]) * (p1.values[i]-p2.values[i]);
 
     return dist;
 }
 
-/*
-    Mapper function for each input element
-    Input is already stored in memory, and output pairs must be stored in the memory allocated
-    Muliple pairs can be generated for a single input, but their number shouldn't exceed NUM_PAIRS
-*/
-__device__ void mapper(const input_type* input, pair_type *pairs, output_type *output) {
-    // Find centroid with min distance from the current point
-    uint64_cu min_distance=ULLONG_MAX;
-    int cluster_id=-1;
 
-    for (int i=0; i<NUM_OUTPUT; i++) {
-        uint64_cu dist = distance(*input, output[i]);
-        if (dist < min_distance) {
-            min_distance = dist;
-            cluster_id = i;
+class Cluster {
+private:
+    int cluster_id;
+    Point centroid;
+    std::vector<Point> points;
+
+public:
+    Cluster(int id, Point init_centroid)
+        : cluster_id(id), centroid(init_centroid)
+    {}
+
+    const Point& getCentroid() {
+        return centroid;
+    }
+
+    void addPoint(Point point) {
+        points.push_back(point);
+    }
+
+    void clear() {
+        points.clear();
+    }
+
+    void updateCentroid() {
+        uint64_t new_values[LENGTH];
+        memset(new_values, 0, LENGTH*sizeof(uint64_t));
+
+        for (auto p : points) {
+            for (int i=0; i<LENGTH; i++)
+                new_values[i] += p.values[i];
         }
-    }
 
-    pairs->key = cluster_id;
-    pairs->value = *input;
-}
+        for (int i=0; i<LENGTH; i++)
+            centroid.values[i] = new_values[i]/points.size();
+    }
+};
 
 
 /*
-    Reducer to convert Key-Value pairs to desired output
-    `len` number of pairs can be read starting from pairs, and output is stored in memory
+    K Means on CPU
+    TODO: OpenMP
 */
-__device__ void reducer(pair_type *pairs, size_t len, output_type *output) {
-    // printf("Key: %d, Length: %llu\n", pairs[0].key, len);
+void runKMeans(input_type *input, output_type *output) {
+    // 1. Iterate over all datapoints, find nearest cluster
+    // 2. Find new clusters
 
-    // Find new centroids
-    uint64_cu new_values[DIMENSION];    // uint64_cu to avoid overflow
-    for (int i=0; i<DIMENSION; i++)
-        new_values[i] = 0;
-
-    for (size_t i=0; i<len; i++) {
-        for (int j=0; j<DIMENSION; j++)
-            new_values[j] += pairs[i].value.values[j];    // Wow, this is bad naming
+    std::vector<Cluster> clusters;
+    for (int i=0; i<NUM_OUTPUT; i++) {
+        clusters.push_back(Cluster(i, output[i]));
     }
 
-    uint64_cu diff = 0;
+    for (int iter=0; iter<ITERATIONS; iter++) {
+        // std::cout << "Iteration: " << iter << "/" << ITERATIONS << std::endl;
 
-    // Take the key of any pair
-    int cluster_idx = pairs[0].key;
-    for (int i=0; i<DIMENSION; i++) {
-        new_values[i]/=len;
+        // Iterate over all datapoints
+        for (uint64_t i=0; i<NUM_INPUT; i++) {
+            uint64_t min_dist = ULLONG_MAX;
+            int c_id = -1;
 
-        diff += abs((int)new_values[i] - output[cluster_idx].values[i]);
-        output[cluster_idx].values[i] = new_values[i];
+            for (int j=0; j<NUM_OUTPUT; j++) {
+                uint64_t temp_dist = distance(input[i], clusters[j].getCentroid());
+                if (temp_dist < min_dist) {
+                    min_dist = temp_dist;
+                    c_id = j;
+                }
+            }
+
+            // Assign this point to the cluster
+            clusters[c_id].addPoint(input[i]);
+        }
+
+        // All the points have been assigned
+        // Now update the Centroid of each cluster
+        for (auto cluster : clusters)
+            cluster.updateCentroid();
     }
 
-    // printf("Key: %d, Diff: %llu\n", cluster_idx, diff);
+    // Copy centroids back to the output space
+    for (int i=0; i<NUM_OUTPUT; i++)
+        output[i] = clusters[i].getCentroid();
 }
+
 
 
 
@@ -103,14 +153,14 @@ void pp_initialize(input_type *input, output_type *output) {
 
     // Chose the next k-1 centroids
     for (int cluster_id=1; cluster_id<NUM_OUTPUT; cluster_id++) {
-        uint64_cu max_dist_allp = 0;    // For storing max dist till now
+        uint64_t max_dist_allp = 0;    // For storing max dist till now
         int max_dist_idx = -1;          // Index of datapoint at max distance
 
         for (int i=0; i<NUM_INPUT; i++) {
             // Find min dist between this point and all the prev centroids
-            uint64_cu min_dist=ULLONG_MAX;
+            uint64_t min_dist=ULLONG_MAX;
             for (int j=0; j<cluster_id; j++) {
-                min_dist = min(min_dist, distance(input[i], output[j]));
+                min_dist = std::min(min_dist, distance(input[i], output[j]));
             }
 
             // If this point is at max dist from all centroids
@@ -127,10 +177,8 @@ void pp_initialize(input_type *input, output_type *output) {
 }
 
 
-/*
-    Main function that runs a map reduce job.
-*/
-int main(int argc, char *argv[]) {
+
+int main(int argc, char const *argv[]) {
     using millis = std::chrono::milliseconds;
     using std::chrono::duration_cast;
     using std::chrono::steady_clock;
@@ -161,7 +209,7 @@ int main(int argc, char *argv[]) {
             getline(input_file, line);
             std::istringstream buffer(line);
 
-            for (int i=0; i<DIMENSION; i++) {
+            for (int i=0; i<LENGTH; i++) {
                 buffer >> input[line_idx].values[i];
                 // printf("%d \n", input[line_idx].values[i]);
             }
@@ -177,19 +225,18 @@ int main(int argc, char *argv[]) {
 
 
     // Now chose initial centroids
-    initialize(input, output);
-    // pp_initialize(input, output);
-
+    initialize(input, output);   // Normal KMeans initialize (random) or
+    // pp_initialize(input, output);   // KMeans++
 
     auto t_seq_2 = steady_clock::now();
 
-    // Run the Map Reduce Job
-    runMapReduce(input, output);
+    // Run  KMeans
+    runKMeans(input, output);
 
     // Save output if required
     std::ofstream output_file;
     if (SAVE_TO_FILE) {
-        string output_filename = filename + ".output";
+        string output_filename = filename + ".output.cpu";
         output_file.open(output_filename);
         if (!output_file.is_open()) {
             std::cout << "Unable to open output file: " << output_filename;
@@ -200,7 +247,7 @@ int main(int argc, char *argv[]) {
     printf("Centroids: \n");
     // Iterate through the output array
     for (size_t i=0; i<NUM_OUTPUT; i++) {
-        for (int j=0; j<DIMENSION; j++) {
+        for (int j=0; j<LENGTH; j++) {
             printf("%d ", output[i].values[j]);
             if (SAVE_TO_FILE)
                 output_file << output[i].values[j] << " ";
@@ -224,6 +271,5 @@ int main(int argc, char *argv[]) {
     std::cout << "Time for CPU data loading: " << time1 << " milliseconds\n";
     std::cout << "Time for map reduce (+free): " << time2 << " milliseconds\n";
     std::cout << "Total time: " << total_time << " milliseconds\n";
-
     return 0;
 }

@@ -7,22 +7,22 @@ const int BLOCK_SIZE = 1024;
 
 using uint64_cu = unsigned long long int;
 
-// No. of input elements (Length of dataset)
+// No. of input elements (Lines in text file)
 // TODO: Maybe make it variable, calculated from reading the text file
 const uint64_cu NUM_INPUT = 5000;
 // No. of pairs per input element
 const int NUM_PAIRS = 1;
 // Total No. of output values (K - No. of clusters)
-const uint64_cu NUM_OUTPUT = 15;
+const int NUM_OUTPUT = 15;
 
 // No. of values in each line (Size of datapoint)
-const int LENGTH = 2;
+const int DIMENSION = 2;
 // No. of iterations
-const int ITERATIONS = 300;
+const int ITERATIONS = 1000;
 
 // Custom types
 struct Point {
-    int values[LENGTH];
+    int values[DIMENSION];
 };
 
 
@@ -43,7 +43,7 @@ struct pair_type {
     // Printing for debugging
     friend std::ostream& operator<<(std::ostream& os, const pair_type& pair) {
         os << "Key: " << pair.key << ", Point: ";
-        for (int i=0; i<LENGTH; i++)
+        for (int i=0; i<DIMENSION; i++)
             os << pair.value.values[i] << " ";
 
         os << "\n";
