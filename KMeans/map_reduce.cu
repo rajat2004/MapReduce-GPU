@@ -42,7 +42,6 @@ __global__ void reducerKernel(pair_type *pairs, output_type *output) {
     size_t threadId = blockIdx.x * blockDim.x + threadIdx.x;    // Global id of the thread
     // Total number of threads, by jumping this much, it ensures that no thread gets the same data
     size_t jump = blockDim.x * gridDim.x;
-    // printf("TID: %d, Jmp: %llu\n", threadId, jump);
 
     for (size_t i=threadId; i<NUM_OUTPUT; i+=jump) {
         // So now i is like the threadId that we need to run on
@@ -74,9 +73,6 @@ __global__ void reducerKernel(pair_type *pairs, output_type *output) {
                 }
             }
         }
-
-        // printf("TID: %d, Uniq_key_index: %llu start_index: %llu, end_index: %llu\n",
-        //         threadId, uniq_key_index, start_index, end_index);
 
         // We can have that the thread doesn't need to process any key
         if (uniq_key_index != i) {
@@ -175,8 +171,6 @@ void runMapReduce(const input_type* input, output_type *output) {
 
         // Copy new centroids
         // cudaMemcpy(output, dev_output, output_size, cudaMemcpyDeviceToHost);
-
-
     }
 
     // Copy outputs from GPU to host

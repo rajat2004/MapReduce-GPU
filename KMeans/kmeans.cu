@@ -47,7 +47,7 @@ __device__ void mapper(const input_type* input, pair_type *pairs, output_type *o
 __device__ void reducer(pair_type *pairs, size_t len, output_type *output) {
     // printf("Key: %d, Length: %llu\n", pairs[0].key, len);
 
-    // Find new centroids
+    // Find new centroid
     uint64_cu new_values[DIMENSION];    // uint64_cu to avoid overflow
     for (int i=0; i<DIMENSION; i++)
         new_values[i] = 0;
@@ -57,14 +57,14 @@ __device__ void reducer(pair_type *pairs, size_t len, output_type *output) {
             new_values[j] += pairs[i].value.values[j];    // Wow, this is bad naming
     }
 
-    uint64_cu diff = 0;
+    // uint64_cu diff = 0;
 
     // Take the key of any pair
     int cluster_idx = pairs[0].key;
     for (int i=0; i<DIMENSION; i++) {
         new_values[i]/=len;
 
-        diff += abs((int)new_values[i] - output[cluster_idx].values[i]);
+        // diff += abs((int)new_values[i] - output[cluster_idx].values[i]);
         output[cluster_idx].values[i] = new_values[i];
     }
 
@@ -84,7 +84,6 @@ void initialize(input_type *input, output_type *output) {
     // Now chose initial centroids
     for (int i=0; i<NUM_OUTPUT; i++) {
         int sample = distribution.sample();
-        // printf("%d\n",sample);
         output[i] = input[sample];
     }
 }
@@ -98,7 +97,6 @@ void pp_initialize(input_type *input, output_type *output) {
     UniformDistribution distribution(NUM_INPUT);
 
     int sample = distribution.sample();
-    // printf("%d\n", sample);
     output[0] = input[sample];
 
     // Chose the next k-1 centroids
@@ -122,7 +120,6 @@ void pp_initialize(input_type *input, output_type *output) {
 
         // Assign new centroid
         output[cluster_id] = input[max_dist_idx];
-        // printf("%d\n", max_dist_idx);
     }
 }
 
@@ -161,11 +158,8 @@ int main(int argc, char *argv[]) {
             getline(input_file, line);
             std::istringstream buffer(line);
 
-            for (int i=0; i<DIMENSION; i++) {
+            for (int i=0; i<DIMENSION; i++)
                 buffer >> input[line_idx].values[i];
-                // printf("%d \n", input[line_idx].values[i]);
-            }
-            // printf("\n");
         }
 
         input_file.close();
@@ -175,11 +169,9 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-
     // Now chose initial centroids
     initialize(input, output);
     // pp_initialize(input, output);
-
 
     auto t_seq_2 = steady_clock::now();
 
@@ -221,8 +213,8 @@ int main(int argc, char *argv[]) {
     auto time2 = duration_cast<millis>( t_seq_3 - t_seq_2 ).count();
     auto total_time = duration_cast<millis>( t_seq_3 - t_seq_1 ).count();
 
-    std::cout << "Time for CPU data loading: " << time1 << " milliseconds\n";
-    std::cout << "Time for map reduce (+free): " << time2 << " milliseconds\n";
+    std::cout << "Time for CPU data loading + initialize: " << time1 << " milliseconds\n";
+    std::cout << "Time for map reduce KMeans + writing outputs + free: " << time2 << " milliseconds\n";
     std::cout << "Total time: " << total_time << " milliseconds\n";
 
     return 0;

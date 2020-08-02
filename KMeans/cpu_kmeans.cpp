@@ -11,7 +11,7 @@
 // TODO: Maybe make it variable, calculated from reading the text file
 const uint64_t NUM_INPUT = 5000;
 // No. of values in each line (Size of datapoint)
-const int LENGTH = 2;
+const int DIMENSION = 2;
 // No. of iterations
 const int ITERATIONS = 1000;
 // Total No. of output values (K - No. of clusters)
@@ -19,7 +19,7 @@ const int NUM_OUTPUT = 15;
 
 // Custom types
 struct Point {
-    int values[LENGTH];
+    int values[DIMENSION];
 };
 
 // Type declarations for input, output & key-value pairs
@@ -31,7 +31,7 @@ const bool SAVE_TO_FILE = true;
 
 uint64_t distance(const Point& p1, const Point& p2) {
     uint64_t dist = 0;
-    for (int i=0; i<LENGTH; i++)
+    for (int i=0; i<DIMENSION; i++)
         dist += (p1.values[i]-p2.values[i]) * (p1.values[i]-p2.values[i]);
 
     return dist;
@@ -45,7 +45,7 @@ private:
     std::vector<Point> points;
 
 public:
-    Cluster(int id, Point init_centroid)
+    Cluster(int id, const Point& init_centroid)
         : cluster_id(id), centroid(init_centroid)
     {}
 
@@ -53,7 +53,7 @@ public:
         return centroid;
     }
 
-    void addPoint(Point point) {
+    void addPoint(const Point& point) {
         points.push_back(point);
     }
 
@@ -62,15 +62,15 @@ public:
     }
 
     void updateCentroid() {
-        uint64_t new_values[LENGTH];
-        memset(new_values, 0, LENGTH*sizeof(uint64_t));
+        uint64_t new_values[DIMENSION];
+        memset(new_values, 0, DIMENSION*sizeof(uint64_t));
 
-        for (auto p : points) {
-            for (int i=0; i<LENGTH; i++)
+        for (const auto& p : points) {
+            for (int i=0; i<DIMENSION; i++)
                 new_values[i] += p.values[i];
         }
 
-        for (int i=0; i<LENGTH; i++)
+        for (int i=0; i<DIMENSION; i++)
             centroid.values[i] = new_values[i]/points.size();
     }
 };
@@ -80,10 +80,11 @@ public:
     K Means on CPU
     TODO: OpenMP
 */
-void runKMeans(input_type *input, output_type *output) {
+void runKMeans(const input_type* input, output_type *output) {
     // 1. Iterate over all datapoints, find nearest cluster
     // 2. Find new clusters
 
+    // Initialize clusters with centroids
     std::vector<Cluster> clusters;
     for (int i=0; i<NUM_OUTPUT; i++) {
         clusters.push_back(Cluster(i, output[i]));
@@ -111,8 +112,10 @@ void runKMeans(input_type *input, output_type *output) {
 
         // All the points have been assigned
         // Now update the Centroid of each cluster
-        for (auto cluster : clusters)
+        for (auto cluster : clusters) {
             cluster.updateCentroid();
+            cluster.clear();            // Old points are no longer needed, remove so that they don't affect the next iteration
+        }
     }
 
     // Copy centroids back to the output space
@@ -134,7 +137,6 @@ void initialize(input_type *input, output_type *output) {
     // Now chose initial centroids
     for (int i=0; i<NUM_OUTPUT; i++) {
         int sample = distribution.sample();
-        // printf("%d\n",sample);
         output[i] = input[sample];
     }
 }
@@ -148,7 +150,6 @@ void pp_initialize(input_type *input, output_type *output) {
     UniformDistribution distribution(NUM_INPUT);
 
     int sample = distribution.sample();
-    // printf("%d\n", sample);
     output[0] = input[sample];
 
     // Chose the next k-1 centroids
@@ -172,7 +173,6 @@ void pp_initialize(input_type *input, output_type *output) {
 
         // Assign new centroid
         output[cluster_id] = input[max_dist_idx];
-        // printf("%d\n", max_dist_idx);
     }
 }
 
@@ -209,11 +209,8 @@ int main(int argc, char const *argv[]) {
             getline(input_file, line);
             std::istringstream buffer(line);
 
-            for (int i=0; i<LENGTH; i++) {
+            for (int i=0; i<DIMENSION; i++)
                 buffer >> input[line_idx].values[i];
-                // printf("%d \n", input[line_idx].values[i]);
-            }
-            // printf("\n");
         }
 
         input_file.close();
@@ -225,8 +222,8 @@ int main(int argc, char const *argv[]) {
 
 
     // Now chose initial centroids
-    initialize(input, output);   // Normal KMeans initialize (random) or
-    // pp_initialize(input, output);   // KMeans++
+    initialize(input, output);          // Normal KMeans initialize (random) or
+    // pp_initialize(input, output);       // KMeans++
 
     auto t_seq_2 = steady_clock::now();
 
@@ -247,7 +244,7 @@ int main(int argc, char const *argv[]) {
     printf("Centroids: \n");
     // Iterate through the output array
     for (size_t i=0; i<NUM_OUTPUT; i++) {
-        for (int j=0; j<LENGTH; j++) {
+        for (int j=0; j<DIMENSION; j++) {
             printf("%d ", output[i].values[j]);
             if (SAVE_TO_FILE)
                 output_file << output[i].values[j] << " ";
@@ -268,8 +265,8 @@ int main(int argc, char const *argv[]) {
     auto time2 = duration_cast<millis>( t_seq_3 - t_seq_2 ).count();
     auto total_time = duration_cast<millis>( t_seq_3 - t_seq_1 ).count();
 
-    std::cout << "Time for CPU data loading: " << time1 << " milliseconds\n";
-    std::cout << "Time for map reduce (+free): " << time2 << " milliseconds\n";
+    std::cout << "Time for CPU data loading + initialize: " << time1 << " milliseconds\n";
+    std::cout << "Time for KMeans + writing output + free: " << time2 << " milliseconds\n";
     std::cout << "Total time: " << total_time << " milliseconds\n";
     return 0;
 }
