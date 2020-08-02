@@ -9,34 +9,14 @@
     Input is already stored in memory, and output pairs must be stored in the memory allocated
     Muliple pairs can be generated for a single input, but their number shouldn't exceed NUM_PAIRS
 */
-__device__ void mapper(input_type *input, pair_type *pairs) {
-    // Set key of the pair to 0
-    // Single key for all the inputs
-    pairs->key = 0;
-
+__device__ void mapper(const input_type* input, value_type *value) {
     auto x = input->x;
     auto y = input->y;
 
     if (x*x + y*y <= 1)
-        pairs->value = true;    // Point lies inside circle
+        *value = true;    // Point lies inside circle
     else
-        pairs->value = false;   // Outside circle
-}
-
-/*
-    Reducer to convert Key-Value pairs to desired output
-    `len` number of pairs can be read starting from pairs, and output is stored in memory
-*/
-__device__ void reducer(pair_type *pairs, size_t len, output_type *output) {
-    // Count number of points within unit circle
-    int circle_points = 0;
-    // TODO: Since this is just a reduction over the array, maybe replace with a thrust library function?
-    for (pair_type* pair=pairs; pair!=(pairs+len); ++pair) {
-        // value is a bool, 1 if point inside circle, else 0
-        circle_points += pair->value;
-    }
-
-    *output = 4.0f * (double(circle_points) / len);
+        *value = false;   // Outside circle
 }
 
 /*

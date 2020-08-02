@@ -11,10 +11,6 @@ pi_estimation: $(SOURCES) $(HEADERS)
 	$(NVCC) -O3 -dc $(SOURCES)
 	$(NVCC) -O3 -o $@ $(OBJECTS)
 
-# release: $(SOURCES) $(HEADERS)
-# 	$(NVCC) -O3 -dc $(SOURCES)
-# 	$(NVCC) -O3 -o $@ $(OBJECTS)
-
 clean:
 	rm -f *.o $(TARGETS)
 
