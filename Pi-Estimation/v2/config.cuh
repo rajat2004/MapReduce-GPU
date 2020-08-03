@@ -27,6 +27,6 @@ using output_type = double;     // Output is estimated value of Pi
 
 // Edit below this shouldn't be required
 
-void runMapReduce(input_type *input, output_type *output);
+void runMapReduce(output_type *output);
 
 #endif // MAP_REDUCE_CUH

@@ -6,9 +6,10 @@ Customized Map-Rduce implementation. Improvements -
 
 What this does is it removes the unnecessary sorting step (single key for all), and therefore the sequential reduce step running over all the pairs. The results from the mapping phase are stored in a boolean array (no need of keys), `true` if point lies inside circle, `false` otherwise. This also has the benefit of reducing a lot of code.
 
-2. Generating random numbers on GPU using `cuRAND`
+2. Use `cuRAND` to generate points on GPU itself
 
-This didn't give good results, and initializing took much more time than the rest. Implementation and results can be seen in [`pi-curand`](https://github.com/rajat2004/MapReduce-GPU/tree/pi-curand) branch.
+After the first improvement, it takes more time to generate data on CPU than the rest of computation. So, let's try to reduce that.\
+This however results in more time taken due to cuRAND initialization.
 
 #### Results
 
@@ -36,3 +37,15 @@ Total time: 2434 milliseconds
 
 Wow, that's a huge improvement!
 Faster than sequential CPU code, but a bit slower than OpenMP.
+
+After testing out 2nd improvement -
+
+```
+$ ./pi_estimation
+Value of Pi: 3.141561520000
+Time for CPU data gen: 0 milliseconds
+Time for map reduce (+free): 5966 milliseconds
+Total time: 5966 milliseconds
+```
+
+`nvprof` gives more detailed insights and shows that most of the time is taken in `setup_kernel` (abut 99% actually). Therefore haven't added this.
