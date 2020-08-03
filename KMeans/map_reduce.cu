@@ -30,6 +30,7 @@ __global__ void mapKernel(const input_type* input, pair_type *pairs, output_type
 */
 void runMapper(const input_type* dev_input, pair_type *dev_pairs, output_type *dev_output) {
     mapKernel<<<GRID_SIZE, BLOCK_SIZE>>>(dev_input, dev_pairs, dev_output);
+    cudaDeviceSynchronize();
 }
 
 
@@ -94,6 +95,7 @@ __global__ void reducerKernel(pair_type *pairs, output_type *output) {
 */
 void runReducer(pair_type *dev_pairs, output_type *dev_output) {
     reducerKernel<<<GRID_SIZE, BLOCK_SIZE>>>(dev_pairs, dev_output);
+    cudaDeviceSynchronize();
 }
 
 
@@ -130,10 +132,8 @@ void runMapReduce(const input_type* input, output_type *output) {
     size_t output_size = NUM_OUTPUT * sizeof(output_type);
     cudaMalloc(&dev_output, output_size);
 
-
     // Allocate memory on host for older centroids
     // output_type *old_output = (output_type *) malloc(output_size);
-
 
     // Copy input datapoints to device
     cudaMemcpy(dev_input, input, input_size, cudaMemcpyHostToDevice);
@@ -153,21 +153,19 @@ void runMapReduce(const input_type* input, output_type *output) {
         // It also requires the current centroids, so pass `dev_output` as well
         runMapper(dev_input, dev_pairs, dev_output);
 
-        // Create Thrust device pointer from key-value pairs for sorting
-        thrust::device_ptr<pair_type> dev_pair_thrust_ptr(dev_pairs);
+        // Create Thrust device pointer from key-value pairs
+        // thrust::device_ptr<pair_type> dev_pair_thrust_ptr(dev_pairs);
 
         // thrust::copy(dev_pair_thrust_ptr, dev_pair_thrust_ptr + TOTAL_PAIRS, std::ostream_iterator<pair_type>(std::cout, " "));
 
         // Sort Key-Value pairs based on Key
         // This should run on the device itself
-        thrust::sort(dev_pair_thrust_ptr, dev_pair_thrust_ptr + TOTAL_PAIRS, KeyValueCompare());
+        thrust::sort(thrust::device, dev_pairs, dev_pairs + TOTAL_PAIRS, KeyValueCompare());
 
         // thrust::copy(dev_pair_thrust_ptr, dev_pair_thrust_ptr + TOTAL_PAIRS, std::ostream_iterator<pair_type>(std::cout, " "));
 
         // Run reducer kernel on key-value pairs
         runReducer(dev_pairs, dev_output);
-
-        cudaDeviceSynchronize();
 
         // Copy new centroids
         // cudaMemcpy(output, dev_output, output_size, cudaMemcpyDeviceToHost);

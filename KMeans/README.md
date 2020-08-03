@@ -1,9 +1,17 @@
 ## K-Means Clustering
 
 Modified version of the Map-Reduce framework used in the other two examples to implement K-Means
+It's modified to run the steps for a specific number of iterations, and also pass the centroids (which are outputs) to the mapper kernel as well, since they're required to generate the mapping.
 
 There are 2 implementations, a GPU Map-Reduce one - [`kmeans.cu`](kmeans.cu) as well as a CPU one - [`cpu_kmeans.cpp`](cpu_kmeans.cpp) for comparision
 Some datasets are already present in the `datasets/` folder, downloaded from - http://cs.joensuu.fi/sipu/datasets/
+
+KMeans generally have a tolerance parameter, to stop when the chnage goes below that. Currently, this hasn't been implemented, and it runs for the specified `ITERATIONS`.
+
+Values are set for using `s*.txt` datasets from the above link. To use a different dataset like `birch`, you'll need to change some constants defined in `config.cuh` (for GPU) & `cpu_kmeans.cpp`.
+Relevant fields are `NUM_INPUT` (lines in text file), `NUM_OUTPUT` (K or clusters), `DIMENSION` (of a single vector), `ITERATIONS`.
+
+It saves the centroids in a text file with `.output` appended to the input text file, so for `s1.txt`, it's stored as `s1.txt.output`, & for CPU KMeans, it saves as `s1.txt.output.cpu`. This can be turned off by setting `SAVE_TO_FILE` as `false`.
 
 To compile everything - `make`
 
@@ -52,18 +60,12 @@ Total time: 1461 milliseconds
 
 Time taken is very similar, but CPU time increases more rapidly than GPU with increase in inputs, dimension & clusters.
 
-To use a different dataset like `birch`, you'll need to change some constants defined in `config.cuh` (for GPU) & `cpu_kmeans.cpp`.
-Relevant fields are `NUM_INPUT` (lines in text file), `NUM_OUTPUT` (K or clusters), `DIMENSION` (of a single vector), `ITERATIONS`.
-They're set for `s1` & similar datasets.
-
-It saves the centroids in a text file with `.output` appended to the input text file, so for `s1.txt`, it's stored as `s1.txt.output`, & for CPU KMeans, it saves as `s1.txt.output.cpu`. This can be turned off by setting `SAVE_TO_FILE` as `false`.
-
 For `birch1` and similar datasets, `NUM_INPUT = 100000`, `NUM_OUTPUT = 100`, `DIMENSION` remains unchanged at 2, `ITERATIONS` can be increased or decreased as desired.
 On [`birch1.txt`](datasets/birch1.txt) (100,000 vectors of Dimension 2, K=100 clusters, 1000 iterations) -
 
 #### GPU
 
-```
+```shell
 $ ./kmeans datasets/birch1.txt
 Centroids:
 491674 487825

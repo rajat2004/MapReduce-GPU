@@ -11,8 +11,10 @@ const bool SAVE_TO_FILE = true;
 __device__ __host__
 uint64_cu distance(const Point& p1, const Point& p2) {
     uint64_cu dist = 0;
-    for (int i=0; i<DIMENSION; i++)
-        dist += (p1.values[i]-p2.values[i]) * (p1.values[i]-p2.values[i]);
+    for (int i=0; i<DIMENSION; i++) {
+        int temp = p1.values[i]-p2.values[i];
+        dist += temp * temp;
+    }
 
     return dist;
 }
