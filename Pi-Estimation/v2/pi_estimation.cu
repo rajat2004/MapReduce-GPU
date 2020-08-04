@@ -32,21 +32,8 @@ int main() {
 
     auto t_seq_1 = steady_clock::now();
 
-    // Allocate host memory
-    // size_t input_size = NUM_INPUT * sizeof(input_type);
-    // input_type *input = (input_type *) malloc(input_size);
-
     size_t output_size = NUM_OUTPUT * sizeof(output_type);
     output_type *output = (output_type *) malloc(output_size);
-
-    // Populate the input array with random coordinates
-    // printf("Generating %llu Test Points\n", NUM_INPUT);
-    // for (size_t i = 0; i < NUM_INPUT; i++) {
-    //     input[i].x = distribution.sample();
-    //     input[i].y = distribution.sample();
-    // }
-
-    auto t_seq_2 = steady_clock::now();
 
     // Run the Map Reduce Job
     runMapReduce(output);
@@ -57,18 +44,14 @@ int main() {
     }
 
     // Free host memory
-    // free(input);
     free(output);
 
-    auto t_seq_3 = steady_clock::now();
+    auto t_seq_2 = steady_clock::now();
 
-    auto time1 = duration_cast<millis>( t_seq_2 - t_seq_1 ).count();
-    auto time2 = duration_cast<millis>( t_seq_3 - t_seq_2 ).count();
-    auto total_time = duration_cast<millis>( t_seq_3 - t_seq_1 ).count();
+    auto time = duration_cast<millis>( t_seq_2 - t_seq_1 ).count();
 
-    std::cout << "Time for CPU data gen: " << time1 << " milliseconds\n";
-    std::cout << "Time for map reduce (+free): " << time2 << " milliseconds\n";
-    std::cout << "Total time: " << total_time << " milliseconds\n";
+    std::cout << "No. of Samples: " << NUM_INPUT << std::endl;
+    std::cout << "Total time: " << time << " milliseconds\n";
 
     return 0;
 }

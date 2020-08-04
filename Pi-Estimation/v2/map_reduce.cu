@@ -64,12 +64,10 @@ void runMapper(curandState *state, value_type *dev_values) {
     Main function to run Map-Reduce program
 */
 void runMapReduce(output_type *output) {
-    // 1. Allocate memory on GPU for inputs
-    // 2. Allocate momory for Value array
-    // 3. Copy inputs to GPU
-    // 4. Run Mapper kernel, which calls mapper function for the inputs decided for that thread
-    // 5. Free input memory
-    // 6. Reduce using thrust to find total points
+    // 1. Allocate memory on GPU for Value array
+    // 2. Initialize cuRAND
+    // 3. Run Mapper kernel, which calls mapper function for the inputs decided for that thread
+    // 4. Reduce using thrust to find total points
     // Calculate Pi and assign to output. Done!
 
     curandState *dev_states;
