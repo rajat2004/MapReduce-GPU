@@ -8,18 +8,15 @@ Useful links explaining the concept & implementation -
 - http://jakascorner.com/blog/2016/05/monte-carlo-pi.html
 - OpenMP usage - http://jakascorner.com/blog/2016/05/omp-monte-carlo-pi.html
 
-Sequential: `g++ sequential_pi.cpp`
-Parallel: `g++ -fopenmp openmp_pi.cpp`
+Run `make` to compile. `make release` compiles with `-O3` optimization applied for a huge boost.
 
-Add `-O3` for a huge improvement in results!
-
-Number of samples (and threads also, in case of OpenMP) can be changed in the respective files
+Number of samples (and threads also, in case of OpenMP) can be changed in the respective files. Current default is 10^9 points and 12 threads in OpenMP.
 
 Results:
 
 #### Samples vs Value,Time (Sequential)
 
-| Samples   |      Time      |  Value |
+| Samples   |      Time (ms)      |  Value |
 |----------|:-------------:|:------:|
 | 10 | 0 | 3.6 |
 | 100 | 0 | 3.28 |

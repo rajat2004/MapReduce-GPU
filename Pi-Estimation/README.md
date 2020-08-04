@@ -19,4 +19,31 @@ Time for map reduce (+free): 22936 milliseconds
 Total time: 24940 milliseconds
 ```
 
-Not a very positive result, it runs much faster than normal CPU code, and bit faster than plain OpenMP parallelized code, however slower than `O3` compiled versions of both of them. These results can be seen at [`CPU/README.md`](https://github.com/rajat2004/MapReduce-GPU/tree/master/CPU)
+Not a positive result, it runs much slower than normal CPU code, and therefore OpenMP parallelized code as well. Also, we probably don't want to increase it too much beyond 10^8 points, 10^9 is about 1GB points (16 bytes each), so will crash your system due to excessive memory usage.
+
+CPU codes & results can be seen at [`CPU/`](https://github.com/rajat2004/MapReduce-GPU/tree/master/CPU)
+
+
+10^8 points -
+
+CPU (Sequential) -
+
+```
+$ ./sequential_pi
+Sequential version:
+number of samples: 100000000
+real Pi: 3.141592653589...
+approx Pi: 3.14165924
+Time: 9796 milliseconds
+```
+
+OpenMP -
+
+```
+$ ./openmp_pi
+Parallel (OpenMP) version:
+Number of samples: 100000000 Threads: 12
+Real Pi: 3.141592653589...
+Approx Pi: 3.14144088
+Time: 1981 milliseconds
+```

@@ -20,7 +20,14 @@ The main implementation of Map-Reduce is in the `map_reduce.cu` file in the exam
 
 3. **Reduce**: All the values for the specific key are processed to generate the final output.
 
-Implementing these in CUDA directly wihtout following MAp-Reduce framework, and with optimisations would give better results. This was just a try to see whether it's possible to implement in such a manner and what kind of results can be obtained.
+Implementing these in CUDA directly without following Map-Reduce framework, and with optimisations would give better results. This was just a try to see whether it's possible to implement in such a manner and what kind of results can be obtained.
+
+This project was tested on a system with the following configuration -
+
+OS: Ubuntu 18.04
+CUDA: 10.0
+GPU: Nvidia GTX 1060 MaxQ
+CPU: i7-8750H (6 cores, 12 threads)
 
 References:
 

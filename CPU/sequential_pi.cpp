@@ -31,15 +31,16 @@ int main() {
     using std::chrono::duration_cast;
     using std::chrono::steady_clock;
 
+    std::cout << "Sequential version: \n";
+    std::cout << "number of samples: " << NUM_SAMPLES << std::endl;
+
     auto t_seq_1 = steady_clock::now();
     const auto approxPi = sequentialPi();
     auto t_seq_2 = steady_clock::now();
 
-    std::cout << "Sequential version: \n";
-    std::cout << "number of samples: " << NUM_SAMPLES << std::endl;
     std::cout << "real Pi: 3.141592653589...\n";
     std::cout << "approx Pi: " << std::setprecision(12) << approxPi << std::endl;
 
     auto time1 = duration_cast<millis>( t_seq_2 - t_seq_1 ).count();
-    std::cout << "Time: " << time1 << " milliseconds\n" << std::endl;
+    std::cout << "Time: " << time1 << " milliseconds\n";
 }

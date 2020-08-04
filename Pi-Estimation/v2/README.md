@@ -35,3 +35,4 @@ Total time: 2434 milliseconds
 ```
 
 Wow, that's a huge improvement!
+Faster than sequential CPU code, but a bit slower than OpenMP.
