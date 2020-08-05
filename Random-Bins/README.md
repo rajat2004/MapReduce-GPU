@@ -23,4 +23,3 @@ Time for CPU data gen: 5258 milliseconds
 Time for map reduce (+free): 21592 milliseconds
 Total time: 26851 milliseconds
 ```
-
