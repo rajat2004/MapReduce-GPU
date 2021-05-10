@@ -6,7 +6,7 @@
 const uint64_t NUM_SAMPLES = 1e9;
 
 
-double approximatePi(const uint64_t& num_samples) {
+double approximatePi(const uint64_t num_samples) {
     UniformDistribution distribution;
     uint64_t circle_points = 0;
 

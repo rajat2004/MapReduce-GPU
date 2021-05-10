@@ -29,6 +29,8 @@ CUDA: 10.0\
 GPU: Nvidia GTX 1060 MaxQ\
 CPU: i7-8750H (6 cores, 12 threads)
 
+**Note**:: In some system configurations, the compilation can fail due to AVX512 related errors. In that case, try removing the -O3 flag from the Makefiles.
+
 References:
 
 - https://github.com/gavyaggarwal/GPU-MapReduce

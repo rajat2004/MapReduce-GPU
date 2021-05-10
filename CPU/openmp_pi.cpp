@@ -1,14 +1,15 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
+#include <thread>
 #include "random_generator.hpp"
 
 
 const uint64_t NUM_SAMPLES = 1e9;
-const int THREADS = 12;
+const int THREADS = std::thread::hardware_concurrency();
 
 
-uint64_t samplesInsideCircle(const uint64_t& num_samples) {
+uint64_t samplesInsideCircle(const uint64_t num_samples) {
     UniformDistribution distribution;
     uint64_t circle_points = 0;
 
